@@ -548,6 +548,121 @@ def sphere_saxo_pupil(dim=240):
     return pup
 
 
+
+
+def baldr_UT_pupil(  diameter, spiders_thickness=0.008, padding_factor = 2 ):
+
+    pup = vlt_pupil(diameter, diameter, spiders_thickness=spiders_thickness, spiders_orientation=0, \
+                dead_actuators=None, dead_actuator_diameter=0.025, strict=False, cpix=False)
+    
+    # pad 
+    npad = padding_factor * pup.shape[0] // 2
+    pup = np.pad(pup, npad, mode='constant',constant_values=(0, 0))
+    return pup 
+
+
+
+
+    
+def baldr_AT_pupil( diameter, spiders_thickness=0.016, strict=False, cpix=False, padding_factor = 2 ):
+    '''Auxillary Telescope theoretical pupil with central obscuration and spiders
+
+    140mm secondary diameter
+    30mm sider 0.03/1.8 = 0.016
+    https://www.eso.org/sci/publications/messenger/archive/no.110-dec02/messenger-no110-21-28.pdf
+    
+    Parameters
+    ----------
+    dim : int
+        Size of the output array (pixels)
+    
+    diameter : int
+        Diameter the disk (pixels)
+    spiders_thickness : float
+        Thickness of the spiders, in fraction of the pupil
+        diameter. Default is 0.008
+    spiders_orientation : float
+        Orientation of the spiders. The zero-orientation corresponds
+        to the orientation of the spiders when observing in ELEV
+        mode. Default is 0
+    dead_actuators : array
+        Position of dead actuators in the pupil, given in fraction of
+        the pupil size. The default values are for SPHERE dead
+        actuators but any other values can be provided as a Nx2 array.
+    dead_actuator_diameter : float
+        Size of the dead actuators mask, in fraction of the pupil
+        diameter. This is the dead actuators of SPHERE. Default is
+        0.025
+    strict : bool optional
+        If set to Trye, size must be strictly less than (<), instead of less
+        or equal (<=). Default is 'False'
+    
+    cpix : bool optional
+        If set to True, the disc is centered on pixel at position (dim//2, dim//2).
+        Default is 'False', i.e. the disc is centered between 4 pixels
+    
+    Returns
+    -------
+    pup : array
+        An array containing a disc with the specified parameters
+    '''
+
+    dim = diameter 
+    
+    
+    # central obscuration (in fraction of the pupil)
+    obs  = 0.13/1.8
+    spiders_orientation = 0
+
+    pp1 = 2.5
+    # spiders
+    if spiders_thickness > 0:
+        # adds some padding on the borders
+        tdim = dim+50
+
+        # dimensions
+        cc = tdim // 2
+        spdr = int(max(1, spiders_thickness*dim))
+            
+        ref = np.zeros((tdim, tdim))
+        ref[cc:, cc:cc+spdr] = 1
+        spider1 = _rotate_interp(ref, -pp1 , (cc, cc+diameter/2))
+
+        ref = np.zeros((tdim, tdim))
+        ref[:cc, cc-spdr+1:cc+1] = 1
+        spider2 = _rotate_interp(ref, -pp1 , (cc, cc-diameter/2))
+        
+        ref = np.zeros((tdim, tdim))
+        ref[cc:cc+spdr, cc:] = 1
+        spider3 = _rotate_interp(ref, pp1 , (cc+diameter/2, cc))
+        
+        ref = np.zeros((tdim, tdim))
+        ref[cc-spdr+1:cc+1, :cc] = 1
+        spider4 = _rotate_interp(ref, pp1 , (cc-diameter/2, cc))
+
+        spider0 = spider1 + spider2 + spider3 + spider4
+
+        spider0 = _rotate_interp(spider1+spider2+spider3+spider4, 45+spiders_orientation, (cc, cc))
+        
+        spider0 = 1 - spider0
+        spider0 = spider0[25:-25, 25:-25]
+    else:
+        spider0 = np.ones(dim)
+
+    # main pupil
+    pup = disc_obstructed(dim, diameter, obs, diameter=True, strict=strict, cpix=cpix)
+
+    # add spiders
+    pup *= spider0
+
+    # pad 
+    npad = padding_factor * pup.shape[0] // 2
+    pup = np.pad(pup, npad, mode='constant',constant_values=(0, 0))
+    
+    return (pup >= 0.5).astype(int)
+
+
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 

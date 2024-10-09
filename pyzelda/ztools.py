@@ -11,6 +11,8 @@ import numpy.fft as fft
 
 from astropy.io import fits
 from pathlib import Path
+import pandas as pd 
+from scipy.interpolate import interp1d
 
 import pyzelda.utils.mft as mft
 import pyzelda.utils.imutils as imutils
@@ -348,6 +350,19 @@ def refractive_index(wave, substrate, T=293):
         else:
             raise ValueError('Wavelength or Temperature is out of range for the refractive index')
 
+    elif substrate == 'N_1405': # negative photoresist used for Baldr phasemasks  
+
+        # wavelengths in csv file are in nanometers
+        # NO TEMPERATURE DEPENDANCE INCLUDED
+        #df = pd.read_csv('/data/Exposed_Ma-N_1405_optical_constants.txt', sep='\s+', header=1)
+        #f = interp1d(df['Wavelength(nm)'], df['n'], kind='linear',fill_value=np.nan, bounds_error=False)
+        #n = f( wave * 1e9 ) # convert input wavelength m - > nm
+        # from  this data we fitted the Cauchy equation between 0.9-1.7 um
+        # Wavelength MUST be in microns
+        A = 1.5951
+        B = 3.84439e-2
+        C = -1.3628e-2
+        n = A + B / (wave)**2 + C / (wave)**4
     else:
         raise ValueError('Unknown substrate {0}!'.format(substrate))
 
