@@ -503,6 +503,145 @@ def create_reference_wave_beyond_pupil(mask_diameter, mask_depth, mask_substrate
     return reference_wave, expi
 
 
+
+
+def create_reference_wave_beyond_pupil_with_aberrations(opd_map, mask_diameter, mask_depth, mask_substrate, mask_Fratio,
+                                       pupil_diameter, pupil, wave, clear=np.array([]), 
+                                       sign_mask=np.array([]), cpix=False):
+    '''
+    Simulate the ZELDA reference wave
+    Parameters
+    ----------
+    opd_map : array
+        OPD map, in m
+    mask_diameter : float
+        Mask physical diameter, in m
+
+    mask_depth : float
+        Mask physical depth, in m
+
+    mask_substrate : str
+        Mask substrate
+    mask_Fratio : float
+        Focal ratio at the mask focal plane
+
+    pupil_diameter : int
+        Instrument pupil diameter, in pixel
+    pupil : array
+        Instrument pupil
+    wave : float, optional
+        Wavelength of the data, in m
+    
+
+    clear : array
+        Clear intensity map, optional. If provided, used to estimate the input field amplitude
+        and therefore the reference wave. If not provided, the analytical pupil will be used.
+    sign_mask : array
+        -1 and 1 analytical input, optional. Used to take into account pi-shift in the input
+        field (or changes in input field amplitude, after FPM filter for example)
+        If not provided, will be considered 1 everywhere.
+    cpix : bool, default is False
+        if True, it centers the apertures / FFTs on a single pixel, otherwise between 4 pixels
+        
+    Returns
+    -------
+    reference_wave : array_like
+        Reference wave as a complex array
+    expi : complex
+        Phasor term associated  with the phase shift
+    '''
+
+    # ++++++++++++++++++++++++++++++++++
+    # Zernike mask parameters
+    # ++++++++++++++++++++++++++++++++++
+
+    # physical diameter and depth, in m
+    d_m = mask_diameter
+    z_m = mask_depth
+
+    # substrate refractive index
+    n_substrate = refractive_index(wave, mask_substrate)
+
+    # R_mask: mask radius in lam0/D unit
+    R_mask = 0.5 * d_m / (wave * mask_Fratio)
+
+    # ++++++++++++++++++++++++++++++++++
+    # Dimensions
+    # ++++++++++++++++++++++++++++++++++
+
+    # array and pupil
+    array_dim = pupil.shape[-1]
+    pupil_radius = pupil_diameter // 2
+
+    # mask sampling in the focal plane
+    D_mask_pixels = 300
+
+    # ++++++++++++++++++++++++++++++++++
+    # Numerical simulation part
+    # ++++++++++++++++++++++++++++++++++
+
+    # --------------------------------
+    # plane A (Entrance pupil plane)
+
+    # definition of m1 parameter for the Matrix Fourier Transform (MFT)
+    # here equal to the mask size
+    m1 = 2 * R_mask * (array_dim / (2. * pupil_radius))
+
+    # definition of the electric field in plane A in the absence of aberrations
+    # If clear and sign_mask are provided, they will be used.
+    # Otherwise, the analytical pupil will be used.
+
+    if clear.any():
+        P = np.nan_to_num(np.sqrt(clear))
+        if sign_mask.any():
+            P = P * sign_mask
+        ampl_PA_noaberr = P * np.exp( 1j * 2 *np.pi * opd_map / wave)
+    else:
+        ampl_PA_noaberr = pupil * np.exp( 1j * 2 *np.pi * opd_map / wave)
+
+    # --------------------------------
+    # plane B (Focal plane)
+
+    # calculation of the electric field in plane B with MFT within the Zernike
+    # sensor mask
+    ampl_PB_noaberr = mft.mft(ampl_PA_noaberr, array_dim, D_mask_pixels, m1, cpix=cpix)
+
+    # import matplotlib.pyplot as plt
+    # import matplotlib.colors as colors
+    # plt.figure(figsize=(15, 15))
+    # plt.clf()
+    # plt.imshow(np.abs(ampl_PB_noaberr)**2, norm=colors.LogNorm())
+
+    # restriction of the MFT with the mask disk of diameter D_mask_pixels/2
+    ampl_PB_noaberr = ampl_PB_noaberr * aperture.disc(D_mask_pixels, D_mask_pixels, diameter=True, cpix=cpix,
+                                                      strict=False)
+
+    # normalization term using the expression of the field in the absence of aberrations without mask
+    # if no clear was provided. Otherwise, normalization is automatic as MFT keeps the energy.
+    if clear.any():
+        norm_ampl_PC_noaberr = 1
+    else:
+        norm_ampl_PC_noaberr = 1 / np.max(np.abs(ampl_PA_noaberr))
+
+    # --------------------------------
+    # plane C (Relayed pupil plane)
+
+    # mask phase shift theta (mask in transmission)
+    theta = 2 * np.pi * (n_substrate - 1) * z_m / wave
+
+    # phasor term associated  with the phase shift
+    expi = np.exp(1j * theta)
+
+    # --------------------------------
+    # definition of parameters for the phase estimate with Zernike
+
+    # b1 = reference_wave: parameter corresponding to the wave diffracted by the mask in the relayed pupil
+    reference_wave = norm_ampl_PC_noaberr * mft.imft(ampl_PB_noaberr, D_mask_pixels, array_dim, m1, cpix=cpix)
+
+    return reference_wave, expi
+
+
+
 def propagate_opd_map(opd_map, mask_diameter, mask_depth, mask_substrate, mask_Fratio,
                       pupil_diameter, pupil, wave):
     '''
