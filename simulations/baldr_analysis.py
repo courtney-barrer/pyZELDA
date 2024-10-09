@@ -89,7 +89,7 @@ z = zelda.Sensor('BALDR_UT_J3')
 pupil_basis = ztools.zernike.zernike_basis(nterms=15, npix=z.pupil_diameter, rho=None, theta=None) * 1e-9
 
 
-opd_input = z.pupil * insert_array(np.zeros( z.pupil.shape), 40 * np.nan_to_num( pupil_basis[4] ) )
+opd_input = z.pupil * insert_array(np.zeros( z.pupil.shape), 0 * np.nan_to_num( pupil_basis[4] ) )
 
 amp = z.pupil #* insert_array(np.zeros( z.pupil.shape), 100*np.nan_to_num( abs(pupil_basis[1] ) ) )
 

@@ -550,7 +550,7 @@ def sphere_saxo_pupil(dim=240):
 
 
 
-def baldr_UT_pupil(  diameter, dim, spiders_thickness=0.008, padding_factor = 2 ):
+def baldr_UT_pupil(  diameter, dim, spiders_thickness=0.008):
 
     pup = vlt_pupil(dim, diameter, spiders_thickness=spiders_thickness, spiders_orientation=0, \
                 dead_actuators=None, dead_actuator_diameter=0.025, strict=False, cpix=False)
@@ -564,7 +564,7 @@ def baldr_UT_pupil(  diameter, dim, spiders_thickness=0.008, padding_factor = 2 
 
 
     
-def baldr_AT_pupil( diameter, dim, spiders_thickness=0.016, strict=False, cpix=False, padding_factor = 2 ):
+def baldr_AT_pupil( diameter, dim, spiders_thickness=0.016, strict=False, cpix=False ):
     '''Auxillary Telescope theoretical pupil with central obscuration and spiders
 
     140mm secondary diameter
