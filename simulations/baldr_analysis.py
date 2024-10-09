@@ -128,11 +128,10 @@ reference_wave, expi = ztools.create_reference_wave_beyond_pupil(z.mask_diameter
 
 
 
-
 fig = plt.figure(0, figsize=(24, 4))
 plt.clf()
 
-gs = gridspec.GridSpec(ncols=7, nrows=1, figure=fig, width_ratios=[.1,1,1,1,1,1,.1])
+gs = gridspec.GridSpec(ncols=8, nrows=1, figure=fig, width_ratios=[.1,1,1,1,1,1,1,.1])
 
 ax = fig.add_subplot(gs[0,1])
 mappable = ax.imshow(N0, aspect='equal', vmin=0, vmax=1)
@@ -159,6 +158,10 @@ cax = ax.imshow(z_opd_advanced, aspect='equal', vmin=-40, vmax=40, cmap='magma')
 ax.set_title('Reconstructed aberration - advanced')
 
 ax = fig.add_subplot(gs[0,6])
+cax = ax.imshow(1e9 * opd_input - z_opd_advanced, aspect='equal', vmin=-40, vmax=40, cmap='magma')
+ax.set_title('Residual')
+
+ax = fig.add_subplot(gs[0,7])
 cbar = fig.colorbar(mappable=cax, cax=ax)
 cbar.set_label('OPD [nm]')
 

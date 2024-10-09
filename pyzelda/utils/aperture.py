@@ -550,21 +550,21 @@ def sphere_saxo_pupil(dim=240):
 
 
 
-def baldr_UT_pupil(  diameter, spiders_thickness=0.008, padding_factor = 2 ):
+def baldr_UT_pupil(  diameter, dim, spiders_thickness=0.008, padding_factor = 2 ):
 
-    pup = vlt_pupil(diameter, diameter, spiders_thickness=spiders_thickness, spiders_orientation=0, \
+    pup = vlt_pupil(dim, diameter, spiders_thickness=spiders_thickness, spiders_orientation=0, \
                 dead_actuators=None, dead_actuator_diameter=0.025, strict=False, cpix=False)
     
     # pad 
-    npad = padding_factor * pup.shape[0] // 2
-    pup = np.pad(pup, npad, mode='constant',constant_values=(0, 0))
+    #npad = padding_factor * pup.shape[0] // 2
+    #pup = np.pad(pup, npad, mode='constant',constant_values=(0, 0))
     return pup 
 
 
 
 
     
-def baldr_AT_pupil( diameter, spiders_thickness=0.016, strict=False, cpix=False, padding_factor = 2 ):
+def baldr_AT_pupil( diameter, dim, spiders_thickness=0.016, strict=False, cpix=False, padding_factor = 2 ):
     '''Auxillary Telescope theoretical pupil with central obscuration and spiders
 
     140mm secondary diameter
@@ -585,14 +585,6 @@ def baldr_AT_pupil( diameter, spiders_thickness=0.016, strict=False, cpix=False,
         Orientation of the spiders. The zero-orientation corresponds
         to the orientation of the spiders when observing in ELEV
         mode. Default is 0
-    dead_actuators : array
-        Position of dead actuators in the pupil, given in fraction of
-        the pupil size. The default values are for SPHERE dead
-        actuators but any other values can be provided as a Nx2 array.
-    dead_actuator_diameter : float
-        Size of the dead actuators mask, in fraction of the pupil
-        diameter. This is the dead actuators of SPHERE. Default is
-        0.025
     strict : bool optional
         If set to Trye, size must be strictly less than (<), instead of less
         or equal (<=). Default is 'False'
@@ -607,7 +599,7 @@ def baldr_AT_pupil( diameter, spiders_thickness=0.016, strict=False, cpix=False,
         An array containing a disc with the specified parameters
     '''
 
-    dim = diameter 
+    #dim = diameter 
     
     
     # central obscuration (in fraction of the pupil)
@@ -656,8 +648,8 @@ def baldr_AT_pupil( diameter, spiders_thickness=0.016, strict=False, cpix=False,
     pup *= spider0
 
     # pad 
-    npad = padding_factor * pup.shape[0] // 2
-    pup = np.pad(pup, npad, mode='constant',constant_values=(0, 0))
+    #npad = padding_factor * pup.shape[0] // 2
+    #pup = np.pad(pup, npad, mode='constant',constant_values=(0, 0))
     
     return (pup >= 0.5).astype(int)
 

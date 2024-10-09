@@ -96,7 +96,13 @@ class Sensor():
             self._mask_substrate = kwargs.get('mask_substrate', config.get('mask', 'substrate'))
 
             # pupil parameters
-            self._pupil_diameter = kwargs.get('pupil_diameter', int(config.get('pupil', 'diameter')))
+            self._pupil_diameter = kwargs.get('pupil_diameter', int(config.get('pupil', 'diameter'))) # diameter of the pupil 
+            
+            if config.has_option('pupil', 'dim') and config.get('pupil', 'dim').isdigit():
+                self._pupil_dim = int(config.get('pupil', 'dim'))
+            else:
+                self._pupil_dim = kwargs.get('pupil_diameter', int(config.get('pupil', 'diameter')))
+            
             self._pupil_telescope = kwargs.get('pupil_telescope', bool(eval(config.get('pupil', 'telescope'))))
             self._pupil_anamorphism = kwargs.get('pupil_anamorphism', eval(config.get('pupil', 'anamorphism')))
 
@@ -122,7 +128,11 @@ class Sensor():
                 if pupil_func is None:
                     raise ValueError('Pupil function is not designed for this sensor')
 
-                self._pupil = pupil_func(self._pupil_diameter)
+                if not config.has_option('pupil', 'dim'): # if dim is not specified in the config file
+                    self._pupil = pupil_func(self._pupil_diameter) # we just use the diameter to generate
+                else: 
+                    self._pupil = pupil_func( self._pupil_diameter, self._pupil_dim ) 
+                    
             else:
                 self._pupil = aperture.disc(self._pupil_diameter, self._pupil_diameter // 2,
                                             mask=True, cpix=True, strict=False)
@@ -164,6 +174,10 @@ class Sensor():
     @property
     def pupil_diameter(self):
         return self._pupil_diameter
+
+    @property
+    def pupil_dim(self):
+        return self._pupil_dim
 
     @property
     def pupil_anamorphism(self):
