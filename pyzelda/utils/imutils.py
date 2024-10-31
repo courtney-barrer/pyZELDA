@@ -1185,7 +1185,7 @@ def profile(img, ptype='mean', step=1, mask=None, center=None, rmax=0, clip=True
     img_flat = img.ravel()
     for r in range(i_max):
         cnt = r_uniq_cnt[r]
-        val = img_flat[r_uniq_inv == r]
+        val = img_flat[(r_uniq_inv == r).ravel()]
         polar[r, 0:cnt] = val
             
     # calculate profile
@@ -1200,6 +1200,11 @@ def profile(img, ptype='mean', step=1, mask=None, center=None, rmax=0, clip=True
             prof = np.nanstd(polar, axis=1, ddof=1)
         elif ptype == 'var':
             prof = np.nanvar(polar, axis=1)
+            #if len(r_uniq_cnt[0]) > 1:
+            #    Bessel_correction = np.array( [rr/rr-1 if rr > 1 else np.nan for rr in r_uniq_cnt] )
+            #    prof *= Bessel_correction # Bessel correction for small sample statistics 
+            #else: 
+            #    print( 'failed for var')
         elif ptype == 'median':
             prof = np.nanmedian(polar, axis=1)
         elif ptype == 'min':
